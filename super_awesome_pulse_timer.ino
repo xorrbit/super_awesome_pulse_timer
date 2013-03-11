@@ -15,28 +15,26 @@ void timer_0_interrupt(void) {
   
   // save the timer config so we know which edge this is
   unsigned long timer_event_reg = HWREG(TIMER0_BASE + TIMER_O_CTL);
+
+  // clear out interrupt mask  
+  TimerIntClear(TIMER0_BASE, TIMER_CAPA_EVENT);
   
-  if ((timer_event_reg & TIMER_EVENT_POS_EDGE) == TIMER_EVENT_POS_EDGE) {
+  if (timer_event_reg & TIMER_EVENT_NEG_EDGE) {
+    // falling edge!
+   
+    // save our measure ticks
+    g_last_measured_time =  TimerValueGet(TIMER0_BASE, TIMER_A);
+    
+    // set to positive edge
+    TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+  } else {
     // rising edge!
-    // clear int mask
-    TimerIntClear(TIMER0_BASE, TIMER_CAPA_EVENT);
     
     // reset value
     TimerLoadSet(TIMER0_BASE, TIMER_A, 0);
     
     // set to negative edge
     TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
-    
-  } else if ((timer_event_reg & TIMER_EVENT_NEG_EDGE) == TIMER_EVENT_NEG_EDGE) {
-    // falling edge!
-    // clear int mask
-    TimerIntClear(TIMER0_BASE, TIMER_CAPA_EVENT);
-    
-    // save our measure ticks
-    g_last_measured_time =  TimerValueGet(TIMER0_BASE, TIMER_A);
-    
-    // set to positive edge
-    TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
   }
 }
 
