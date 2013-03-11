@@ -2,29 +2,35 @@
  * By Andrew Orr
  */
 
+#include <inc/hw_timer.h>
 #include <driverlib/timer.h>
 #include <driverlib/sysctl.h>
 
-int g_edge = TIMER_EVENT_POS_EDGE;
-int g_last_measured_time = 0;
+unsigned long g_last_measured_time = 0;
  
 void timer_a_interrupt(void) {
   // timer a interrupt
   
-  if (g_edge == TIMER_EVENT_POS_EDGE) {
+  // save the timer config so we know which edge this is
+  unsigned long timer_event_reg = HWREG(TIMER0_BASE + TIMER_O_CTL);
+  
+  if ((timer_event_reg & TIMER_EVENT_POS_EDGE) == TIMER_EVENT_POS_EDGE) {
     // rising edge!
-    TimerLoadSet(TIMER0_BASE, TIMER_A, 0); // reset value
+    
+    // reset value
+    TimerLoadSet(TIMER0_BASE, TIMER_A, 0);
     
     // set to negative edge
-    g_edge = TIMER_EVENT_POS_EDGE;
-    TimerControlEvent(TIMER0_BASE, TIMER_A, g_edge);
+    TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
     
-  } else if (g_edge == TIMER_EVENT_NEG_EDGE) {
+  } else if ((timer_event_reg & TIMER_EVENT_NEG_EDGE) == TIMER_EVENT_NEG_EDGE) {
     // falling edge!
+    
+    // save our measure ticks
     g_last_measured_time =  TimerValueGet(TIMER0_BASE, TIMER_A);
     
-    g_edge = TIMER_EVENT_POS_EDGE;
-    TimerControlEvent(TIMER0_BASE, TIMER_A, g_edge);
+    // set to positive edge
+    TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
   }
 }
 
