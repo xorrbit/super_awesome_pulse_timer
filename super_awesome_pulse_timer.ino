@@ -1,5 +1,6 @@
-/* super awesome pulse timer v2
+/* super awesome pulse timer v3
  * By Andrew Orr
+ * hook your junk up to PB6 (4 pins up from bottom right corner)
  */
 
 #include <inc/hw_timer.h>
@@ -58,7 +59,7 @@ void setup() {
   SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
   Serial.begin(9600);
-  Serial.println("Starting super awesome pulse timer r3!...");
+  Serial.println("Starting super awesome pulse timer v3!...");
   
   // Configure PB6 as T0CCP0
   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
@@ -98,11 +99,11 @@ void loop() {
   Serial.print(g_last_measured_ticks);
   Serial.print(", time: ");
   Serial.print(g_last_measured_ticks * 0.0125);
-  Serial.print(" ns, current average: ");
+  Serial.print(" µs, current average: ");
   Serial.print(g_current_average);
   Serial.print(", current average time: ");
   Serial.print(g_current_average * 0.0125);
-  Serial.println(" ns");
+  Serial.println(" µs");
   delay(50);
 }
 
