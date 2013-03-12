@@ -1,10 +1,6 @@
-/* super awesome pulse timer v1
+/* super awesome pulse timer v2
  * By Andrew Orr
  */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <inc/hw_timer.h>
 #include <inc/hw_ints.h>
@@ -14,6 +10,11 @@ extern "C" {
 #include <driverlib/systick.h>
 
 volatile unsigned long g_last_measured_ticks = 0;
+
+unsigned long g_rolling_average[100] = {0};
+unsigned long g_current_total = 0;
+unsigned int g_current_pos = 0;
+unsigned long g_current_average = 0;
 
 void timer_0_interrupt(void) {
   // timer 0 interrupt
@@ -25,12 +26,22 @@ void timer_0_interrupt(void) {
   TimerIntClear(TIMER0_BASE, TIMER_CAPA_EVENT);
   
   if (timer_event_reg & TIMER_EVENT_NEG_EDGE) {
-    // falling edge
+    // falling edge!
+    
+    // save our ticks
     g_last_measured_ticks = 16777216 - SysTickValueGet();
     
+    // this stuff just keeps track of the last 100 readings to create an average
+    g_current_total -= g_rolling_average[g_current_pos];
+    g_rolling_average[g_current_pos++] = g_last_measured_ticks;
+    g_current_total += g_last_measured_ticks;
+    if (g_current_pos == 100)
+      g_current_pos = 0;
+    g_current_average = g_current_total / 100;
+       
     // set to positive edge
-   TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
- } else {
+    TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+  } else {
     // rising edge!
     
     // reset our system tick counter to 0;
@@ -84,15 +95,14 @@ void setup() {
 
 void loop() {
   Serial.print("measured ticks : ");
-  Serial.println(g_last_measured_ticks);
-  Serial.print("time: ");
-  Serial.println(g_last_measured_ticks * 0.0125);
+  Serial.print(g_last_measured_ticks);
+  Serial.print(", time: ");
+  Serial.print(g_last_measured_ticks * 0.0125);
+  Serial.print(" ns, current average: ");
+  Serial.print(g_current_average);
+  Serial.print(", current average time: ");
+  Serial.print(g_current_average * 0.0125);
   Serial.println(" ns");
   delay(50);
 }
-
-
-#ifdef __cplusplus
-}
-#endif
 
